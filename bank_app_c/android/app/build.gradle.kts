@@ -32,7 +32,7 @@ android {
         // Android always shows the disambiguation dialog (app chooser)
         // instead of auto-opening a single "default" app. Change this to your
         // real deployed backend host before testing the chooser on a device.
-        manifestPlaceholders["deepLinkHost"] = "example.com"
+        manifestPlaceholders["deepLinkHost"] = "sgqr-deep-link-demo.onrender.com"
     }
 
     buildTypes {
