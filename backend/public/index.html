@@ -25,6 +25,8 @@
   <div id="result"></div>
 
 <script>
+const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+
 document.getElementById("create").addEventListener("click", async () => {
   const merchant = document.getElementById("merchant").value;
   const amount = parseFloat(document.getElementById("amount").value);
@@ -35,8 +37,9 @@ document.getElementById("create").addEventListener("click", async () => {
     body: JSON.stringify({ merchant, amount, currency }),
   });
   const data = await res.json();
+  const qrImg = `<img src="${data.qrPngUrl}" alt="QR code${isMobile ? " — tap to open" : ""}" />`;
   document.getElementById("result").innerHTML = `
-    <a href="${data.payUrl}"><img src="${data.qrPngUrl}" alt="QR code — tap to open" /></a>
+    ${isMobile ? `<a href="${data.payUrl}">${qrImg}</a>` : qrImg}
     <a href="${data.payUrl}" target="_blank">${data.payUrl}</a>
   `;
 });
