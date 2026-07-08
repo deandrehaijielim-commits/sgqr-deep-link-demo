@@ -1,0 +1,15 @@
+.DS_Store
+
+# Node
+backend/node_modules/
+
+# Flutter
+**/build/
+**/.dart_tool/
+**/.flutter-plugins
+**/.flutter-plugins-dependencies
+**/ios/Pods/
+**/ios/.symlinks/
+**/ios/Podfile.lock
+**/*.iml
+.claude/settings.local.json

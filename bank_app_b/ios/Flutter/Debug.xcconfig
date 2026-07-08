@@ -1,0 +1,8 @@
+#include? "Pods/Target Support Files/Pods-Runner/Pods-Runner.debug.xcconfig"
+#include "Generated.xcconfig"
+
+// Which bank flavor this build represents. To build Bank B or Bank C instead,
+// change this value (and the bundle identifier in Xcode -> Runner -> Signing
+// & Capabilities) before building, or duplicate this scheme per bank -- see
+// the root README for the full 3-flavor iOS setup.
+BANK_URL_SCHEME = bankbdemo

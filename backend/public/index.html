@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>SGQR Deep Link Demo — Create Payment</title>
+<style>
+  body { font-family: -apple-system, Helvetica, Arial, sans-serif; max-width: 480px; margin: 40px auto; padding: 0 16px; color: #1a1a1a; }
+  h1 { font-size: 1.4rem; }
+  label { display: block; margin-top: 12px; font-size: 0.9rem; color: #444; }
+  input { width: 100%; padding: 10px; font-size: 1rem; box-sizing: border-box; margin-top: 4px; border: 1px solid #ccc; border-radius: 6px; }
+  button { margin-top: 20px; width: 100%; padding: 12px; font-size: 1rem; background: #1d3557; color: white; border: none; border-radius: 6px; cursor: pointer; }
+  #result { margin-top: 24px; text-align: center; }
+  #result img { width: 240px; height: 240px; border: 1px solid #eee; }
+  #result a { display: block; margin-top: 12px; word-break: break-all; }
+</style>
+</head>
+<body>
+  <h1>Create a demo SGQR payment</h1>
+  <p>Fill this in, then scan the generated QR with a phone (Android will show the app chooser; iOS opens the bank-picker page).</p>
+  <label>Merchant name<input id="merchant" value="Kopi Corner" /></label>
+  <label>Amount<input id="amount" type="number" step="0.01" value="4.80" /></label>
+  <label>Currency<input id="currency" value="SGD" /></label>
+  <button id="create">Generate QR</button>
+  <div id="result"></div>
+
+<script>
+document.getElementById("create").addEventListener("click", async () => {
+  const merchant = document.getElementById("merchant").value;
+  const amount = parseFloat(document.getElementById("amount").value);
+  const currency = document.getElementById("currency").value;
+  const res = await fetch("/api/payments", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ merchant, amount, currency }),
+  });
+  const data = await res.json();
+  document.getElementById("result").innerHTML = `
+    <img src="${data.qrPngUrl}" alt="QR code" />
+    <a href="${data.payUrl}" target="_blank">${data.payUrl}</a>
+  `;
+});
+</script>
+</body>
+</html>

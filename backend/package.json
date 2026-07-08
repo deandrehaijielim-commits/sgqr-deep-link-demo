@@ -1,0 +1,15 @@
+{
+  "name": "sgqr-deep-link-backend",
+  "version": "1.0.0",
+  "description": "Simulated SGQR-style deep linking backend: mints payment payloads, serves QR codes and the iOS bank-picker page.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "nanoid": "^3.3.7",
+    "qrcode": "^1.5.3"
+  }
+}
