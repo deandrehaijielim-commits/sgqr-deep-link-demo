@@ -59,30 +59,7 @@ async function load() {
 function openBank(bank) {
   const status = document.getElementById("status");
   status.textContent = `Opening ${bank.name}…`;
-
-  const deepLink = `${bank.scheme}://pay?token=${encodeURIComponent(token)}`;
-
-  // If the app opens successfully, this tab gets backgrounded at some point
-  // before the check below fires — track that with a flag rather than
-  // checking document.hidden at fire time, since the user may have already
-  // returned to this tab (making it visible again) by then, which would
-  // otherwise wrongly report the app as "not installed".
-  let wentHidden = false;
-  function onVisibilityChange() {
-    if (document.hidden) wentHidden = true;
-  }
-  document.addEventListener("visibilitychange", onVisibilityChange);
-
-  window.location.href = deepLink;
-
-  setTimeout(() => {
-    document.removeEventListener("visibilitychange", onVisibilityChange);
-    if (!wentHidden && !document.hidden) {
-      status.textContent = `${bank.name} doesn't seem to be installed on this device.`;
-    } else {
-      status.textContent = "";
-    }
-  }, 1800);
+  window.location.href = `${bank.scheme}://pay?token=${encodeURIComponent(token)}`;
 }
 
 load();

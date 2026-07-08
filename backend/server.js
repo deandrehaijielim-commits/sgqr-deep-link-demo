@@ -16,6 +16,16 @@ const BASE_URL =
   `http://localhost:${PORT}`;
 
 app.use(express.json());
+
+// Anti-clickjacking: refuse to render any page from this app inside an
+// iframe, so a malicious site can't overlay invisible bank-picker buttons
+// on top of its own UI to trick users into tapping "Approve" unknowingly.
+app.use((req, res, next) => {
+  res.setHeader("X-Frame-Options", "DENY");
+  res.setHeader("Content-Security-Policy", "frame-ancestors 'none'");
+  next();
+});
+
 app.use(express.static(path.join(__dirname, "public")));
 
 app.get("/api/banks", (req, res) => {
