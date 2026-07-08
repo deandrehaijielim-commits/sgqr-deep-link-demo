@@ -1,7 +1,7 @@
 const path = require("path");
 const express = require("express");
 const QRCode = require("qrcode");
-const { createPayload, getPayload } = require("./store");
+const { createPayload, getPayload, markPaid } = require("./store");
 const { BANKS } = require("./banks");
 
 const app = express();
@@ -50,6 +50,19 @@ app.get("/api/payload/:token", (req, res) => {
   const payload = getPayload(req.params.token);
   if (!payload) return res.status(404).json({ error: "payload not found" });
   res.json(payload);
+});
+
+// Called by whichever bank app the user approves the payment in. Once a
+// payload is paid, it's single-use — any other bank app trying to pay the
+// same token afterwards gets a 409 so it can show "already paid" instead.
+app.post("/api/payload/:token/pay", (req, res) => {
+  const { bank } = req.body || {};
+  const result = markPaid(req.params.token, bank);
+  if (!result) return res.status(404).json({ error: "payload not found" });
+  if (result.alreadyPaid) {
+    return res.status(409).json({ error: "payment already completed", payload: result.payload });
+  }
+  res.json(result.payload);
 });
 
 app.get("/qr/:token", async (req, res) => {

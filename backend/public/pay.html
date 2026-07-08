@@ -12,15 +12,14 @@
   h2 { font-size: 1rem; color: #444; margin-bottom: 8px; }
   .bank-btn { display: flex; align-items: center; width: 100%; padding: 14px 16px; margin-bottom: 12px; border: none; border-radius: 10px; color: white; font-size: 1rem; font-weight: 600; cursor: pointer; }
   .bank-btn .dot { width: 12px; height: 12px; border-radius: 50%; background: rgba(255,255,255,0.6); margin-right: 12px; }
-  #status { margin-top: 16px; font-size: 0.9rem; color: #888; min-height: 1.2em; }
   #error { color: #c0392b; }
+  #paid { color: #2a9d8f; font-weight: 600; }
 </style>
 </head>
 <body>
   <div class="payload" id="payload">Loading payment details…</div>
-  <h2>Pay with</h2>
+  <h2 id="banksHeading">Pay with</h2>
   <div id="banks"></div>
-  <div id="status"></div>
 
 <script>
 const token = window.location.pathname.split("/").pop();
@@ -45,6 +44,12 @@ async function load() {
     <div class="merchant">Ref: ${payload.reference}</div>
   `;
 
+  if (payload.paid) {
+    document.getElementById("banksHeading").style.display = "none";
+    document.getElementById("banks").innerHTML = `<p id="paid">This payment has already been completed.</p>`;
+    return;
+  }
+
   const banksEl = document.getElementById("banks");
   banks.forEach((bank) => {
     const btn = document.createElement("button");
@@ -57,8 +62,6 @@ async function load() {
 }
 
 function openBank(bank) {
-  const status = document.getElementById("status");
-  status.textContent = `Opening ${bank.name}…`;
   window.location.href = `${bank.scheme}://pay?token=${encodeURIComponent(token)}`;
 }
 

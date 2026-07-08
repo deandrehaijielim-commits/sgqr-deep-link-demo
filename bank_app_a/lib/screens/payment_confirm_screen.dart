@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../balance.dart';
 import '../bank_config.dart';
 import '../payment_api.dart';
 import 'payment_success_screen.dart';
@@ -13,11 +14,37 @@ class PaymentConfirmScreen extends StatefulWidget {
 
 class _PaymentConfirmScreenState extends State<PaymentConfirmScreen> {
   late Future<PaymentPayload> _future;
+  bool _confirming = false;
 
   @override
   void initState() {
     super.initState();
     _future = PaymentApi.fetchPayload(widget.token);
+  }
+
+  Future<void> _approve(PaymentPayload payload) async {
+    setState(() => _confirming = true);
+    try {
+      await PaymentApi.confirmPayment(payload.token, kBankId);
+      if (!mounted) return;
+      BalanceStore.pay(payload.amount.toDouble());
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (_) => PaymentSuccessScreen(payload: payload)),
+      );
+    } on PaymentAlreadyPaidException {
+      if (!mounted) return;
+      setState(() => _confirming = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+            content: Text('This payment was already completed elsewhere.')),
+      );
+      Navigator.of(context).pop();
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _confirming = false);
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('$e')));
+    }
   }
 
   @override
@@ -63,33 +90,39 @@ class _PaymentConfirmScreenState extends State<PaymentConfirmScreen> {
                 Text('Ref: ${payload.reference}',
                     style: const TextStyle(color: Colors.black54)),
                 const Spacer(),
-                Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton(
-                        onPressed: () => Navigator.of(context).pop(),
-                        child: const Text('Cancel'),
+                if (payload.paid)
+                  const Text('This payment has already been completed.',
+                      style: TextStyle(color: Colors.black54))
+                else
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: _confirming
+                              ? null
+                              : () => Navigator.of(context).pop(),
+                          child: const Text('Cancel'),
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                            backgroundColor: bank.color,
-                            foregroundColor: Colors.white),
-                        onPressed: () {
-                          Navigator.of(context).pushReplacement(
-                            MaterialPageRoute(
-                              builder: (_) =>
-                                  PaymentSuccessScreen(payload: payload),
-                            ),
-                          );
-                        },
-                        child: const Text('Approve'),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                              backgroundColor: bank.color,
+                              foregroundColor: Colors.white),
+                          onPressed: _confirming ? null : () => _approve(payload),
+                          child: _confirming
+                              ? const SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                      strokeWidth: 2, color: Colors.white),
+                                )
+                              : const Text('Approve'),
+                        ),
                       ),
-                    ),
-                  ],
-                ),
+                    ],
+                  ),
               ],
             ),
           );

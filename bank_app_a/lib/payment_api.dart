@@ -8,6 +8,7 @@ class PaymentPayload {
   final num amount;
   final String currency;
   final String reference;
+  final bool paid;
 
   PaymentPayload({
     required this.token,
@@ -15,6 +16,7 @@ class PaymentPayload {
     required this.amount,
     required this.currency,
     required this.reference,
+    required this.paid,
   });
 
   factory PaymentPayload.fromJson(Map<String, dynamic> json) => PaymentPayload(
@@ -23,8 +25,12 @@ class PaymentPayload {
         amount: json['amount'] as num,
         currency: json['currency'] as String,
         reference: json['reference'] as String,
+        paid: json['paid'] as bool? ?? false,
       );
 }
+
+/// Thrown when another bank app already paid this token first.
+class PaymentAlreadyPaidException implements Exception {}
 
 class PaymentApi {
   static Future<PaymentPayload> fetchPayload(String token) async {
@@ -32,6 +38,20 @@ class PaymentApi {
     final res = await http.get(uri);
     if (res.statusCode != 200) {
       throw Exception('Payment not found or expired');
+    }
+    return PaymentPayload.fromJson(jsonDecode(res.body) as Map<String, dynamic>);
+  }
+
+  static Future<PaymentPayload> confirmPayment(String token, String bankId) async {
+    final uri = Uri.parse('$kBackendBaseUrl/api/payload/$token/pay');
+    final res = await http.post(
+      uri,
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'bank': bankId}),
+    );
+    if (res.statusCode == 409) throw PaymentAlreadyPaidException();
+    if (res.statusCode != 200) {
+      throw Exception('Failed to confirm payment');
     }
     return PaymentPayload.fromJson(jsonDecode(res.body) as Map<String, dynamic>);
   }

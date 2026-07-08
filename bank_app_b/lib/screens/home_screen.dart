@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../balance.dart';
 import '../bank_config.dart';
 
 class HomeScreen extends StatelessWidget {
@@ -21,19 +22,24 @@ class HomeScreen extends StatelessWidget {
           children: [
             Card(
               color: bank.color,
-              child: const Padding(
-                padding: EdgeInsets.all(20),
+              child: Padding(
+                padding: const EdgeInsets.all(20),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Available balance',
+                    const Text('Available balance',
                         style: TextStyle(color: Colors.white70)),
-                    SizedBox(height: 8),
-                    Text('SGD 1,284.50',
-                        style: TextStyle(
+                    const SizedBox(height: 8),
+                    ValueListenableBuilder<double>(
+                      valueListenable: BalanceStore.balance,
+                      builder: (context, balance, _) => Text(
+                        'SGD ${balance.toStringAsFixed(2)}',
+                        style: const TextStyle(
                             color: Colors.white,
                             fontSize: 28,
-                            fontWeight: FontWeight.bold)),
+                            fontWeight: FontWeight.bold),
+                      ),
+                    ),
                   ],
                 ),
               ),
