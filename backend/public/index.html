@@ -36,7 +36,7 @@ document.getElementById("create").addEventListener("click", async () => {
   });
   const data = await res.json();
   document.getElementById("result").innerHTML = `
-    <img src="${data.qrPngUrl}" alt="QR code" />
+    <a href="${data.payUrl}"><img src="${data.qrPngUrl}" alt="QR code — tap to open" /></a>
     <a href="${data.payUrl}" target="_blank">${data.payUrl}</a>
   `;
 });

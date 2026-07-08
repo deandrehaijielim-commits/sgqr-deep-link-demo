@@ -21,6 +21,7 @@ class _BankAppState extends State<BankApp> {
   final _navigatorKey = GlobalKey<NavigatorState>();
   final _appLinks = AppLinks();
   StreamSubscription<Uri>? _linkSub;
+  Uri? _lastHandledUri;
 
   @override
   void initState() {
@@ -34,6 +35,10 @@ class _BankAppState extends State<BankApp> {
     if (initialUri != null) _handleUri(initialUri);
 
     // Warm start / already running: link arrives while the app is alive.
+    // Note: on cold start, uriLinkStream can also re-emit the same initial
+    // link that getInitialLink() already returned above — _handleUri
+    // dedupes against the last handled URI to avoid pushing the confirm
+    // screen twice.
     _linkSub = _appLinks.uriLinkStream.listen(_handleUri);
   }
 
@@ -45,6 +50,8 @@ class _BankAppState extends State<BankApp> {
   }
 
   void _handleUri(Uri uri) {
+    if (_lastHandledUri == uri) return;
+    _lastHandledUri = uri;
     final token = _extractToken(uri);
     if (token == null) return;
     _navigatorKey.currentState?.push(
