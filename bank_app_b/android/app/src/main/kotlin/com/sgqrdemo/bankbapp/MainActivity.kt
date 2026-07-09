@@ -1,4 +1,4 @@
-package com.sgqrdemo.bank_template
+package com.sgqrdemo.bankbapp
 
 import io.flutter.embedding.android.FlutterActivity
 
