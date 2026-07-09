@@ -24,6 +24,29 @@
 <script>
 const token = window.location.pathname.split("/").pop();
 
+// Android quirk: if the user has a default browser set (nearly everyone),
+// tapping an *unverified* https:// link — which is what our QR encodes —
+// goes straight to that browser and skips app resolution entirely. The
+// native "Open with…" chooser only appears for unverified links when no
+// default browser is set. The standard workaround (used by Firebase
+// Dynamic Links, Branch.io, etc.) is an intent:// redirect, which forces
+// Android's real intent-resolution system regardless of default-browser
+// settings. iOS ignores this entirely and just proceeds to load() below.
+// The "nr" (no-redirect) param guards against looping back into this
+// redirect once we land back here via the fallback URL.
+(function () {
+  const isAndroid = /Android/i.test(navigator.userAgent);
+  const params = new URLSearchParams(window.location.search);
+  if (isAndroid && !params.has("nr")) {
+    const fallback =
+      window.location.href + (window.location.search ? "&" : "?") + "nr=1";
+    const intentUrl =
+      `intent://${window.location.host}${window.location.pathname}` +
+      `#Intent;scheme=https;S.browser_fallback_url=${encodeURIComponent(fallback)};end`;
+    window.location.href = intentUrl;
+  }
+})();
+
 async function load() {
   const [payloadRes, banksRes] = await Promise.all([
     fetch(`/api/payload/${token}`),
