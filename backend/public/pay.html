@@ -15,11 +15,13 @@
   #error { color: #c0392b; }
   #paid { color: #2a9d8f; font-weight: 600; }
   #androidContinue { display: none; width: 100%; padding: 16px; margin-bottom: 24px; border: none; border-radius: 10px; background: #1a1a1a; color: white; font-size: 1.05rem; font-weight: 600; cursor: pointer; }
+  #debug { font-family: monospace; font-size: 10px; color: #999; word-break: break-all; margin-bottom: 16px; white-space: pre-wrap; }
 </style>
 </head>
 <body>
   <div class="payload" id="payload">Loading payment details…</div>
   <button id="androidContinue">Continue to pay</button>
+  <div id="debug"></div>
   <h2 id="banksHeading">Pay with</h2>
   <div id="banks"></div>
 
@@ -50,14 +52,19 @@ const skipRedirect = new URLSearchParams(window.location.search).has("nr");
 
 if (isAndroid && !skipRedirect) {
   const continueBtn = document.getElementById("androidContinue");
+  const debugEl = document.getElementById("debug");
   continueBtn.style.display = "block";
   continueBtn.addEventListener("click", () => {
+    debugEl.textContent = "click handler fired…";
     const fallback =
       window.location.href + (window.location.search ? "&" : "?") + "nr=1";
     const intentUrl =
       `intent://${window.location.host}${window.location.pathname}` +
       `#Intent;scheme=https;S.browser_fallback_url=${encodeURIComponent(fallback)};end`;
-    window.location.href = intentUrl;
+    debugEl.textContent = "navigating to: " + intentUrl;
+    setTimeout(() => {
+      window.location.href = intentUrl;
+    }, 50);
   });
 }
 
