@@ -55,16 +55,16 @@ if (isAndroid && !skipRedirect) {
   const debugEl = document.getElementById("debug");
   continueBtn.style.display = "block";
   continueBtn.addEventListener("click", () => {
-    debugEl.textContent = "click handler fired…";
     const fallback =
       window.location.href + (window.location.search ? "&" : "?") + "nr=1";
     const intentUrl =
       `intent://${window.location.host}${window.location.pathname}` +
       `#Intent;scheme=https;S.browser_fallback_url=${encodeURIComponent(fallback)};end`;
     debugEl.textContent = "navigating to: " + intentUrl;
-    setTimeout(() => {
-      window.location.href = intentUrl;
-    }, 50);
+    // Must run synchronously within the click handler — any delay (even a
+    // setTimeout) drops Chrome's "user activation" flag, and it silently
+    // no-ops the intent:// navigation instead of resolving it.
+    window.location.href = intentUrl;
   });
 }
 
