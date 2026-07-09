@@ -41,6 +41,15 @@ const token = window.location.pathname.split("/").pop();
 // "trusted user activation" flag for intent:// navigation, so it can
 // silently no-op instead of resolving to an app.
 //
+// Critically, the intent targets a scheme ("sgqrpay") that no browser can
+// ever claim — not "https". Chrome refuses to navigate an intent:// link
+// whose target could resolve back to a browser (itself, to avoid a loop),
+// which is why an https-scheme intent:// silently did nothing at all here.
+// All three bank apps register this shared scheme (in addition to their
+// own individual custom scheme), so it's still ambiguous across exactly
+// the 3 of them — forcing the real chooser — with zero risk of Chrome
+// treating itself as a candidate.
+//
 // iOS ignores this entirely and just proceeds to load() below. Android
 // also skips the bank-button list entirely — the whole point on Android
 // is the native chooser, not a picker page.
@@ -52,8 +61,8 @@ if (isAndroid && !skipRedirect) {
   const fallback =
     window.location.href + (window.location.search ? "&" : "?") + "nr=1";
   const intentUrl =
-    `intent://${window.location.host}${window.location.pathname}` +
-    `#Intent;scheme=https;S.browser_fallback_url=${encodeURIComponent(fallback)};end`;
+    `intent://pay?token=${encodeURIComponent(token)}` +
+    `#Intent;scheme=sgqrpay;S.browser_fallback_url=${encodeURIComponent(fallback)};end`;
   continueBtn.href = intentUrl;
   continueBtn.style.display = "block";
   document.getElementById("banksHeading").style.display = "none";

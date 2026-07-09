@@ -47,6 +47,20 @@
                     android:host="${deepLinkHost}"
                     android:pathPrefix="/pay"/>
             </intent-filter>
+
+            <!-- Shared scheme all three bank apps register (unlike the
+                 https:// filter above, no browser can ever claim this).
+                 pay.html's Android intent:// redirect targets this instead of
+                 https, since Chrome refuses to navigate an intent:// link
+                 whose target could resolve back to a browser — it silently
+                 no-ops rather than showing the chooser, to avoid looping
+                 back into itself. -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data android:scheme="sgqrpay" android:host="pay"/>
+            </intent-filter>
         </activity>
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
