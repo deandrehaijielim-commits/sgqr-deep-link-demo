@@ -14,14 +14,12 @@
   .bank-btn .dot { width: 12px; height: 12px; border-radius: 50%; background: rgba(255,255,255,0.6); margin-right: 12px; }
   #error { color: #c0392b; }
   #paid { color: #2a9d8f; font-weight: 600; }
-  #androidContinue { display: none; width: 100%; padding: 16px; margin-bottom: 24px; border: none; border-radius: 10px; background: #1a1a1a; color: white; font-size: 1.05rem; font-weight: 600; cursor: pointer; }
-  #debug { font-family: monospace; font-size: 10px; color: #999; word-break: break-all; margin-bottom: 16px; white-space: pre-wrap; }
+  #androidContinue { display: none; width: 100%; padding: 16px; margin-bottom: 24px; border: none; border-radius: 10px; background: #1a1a1a; color: white; font-size: 1.05rem; font-weight: 600; cursor: pointer; text-align: center; text-decoration: none; box-sizing: border-box; }
 </style>
 </head>
 <body>
   <div class="payload" id="payload">Loading payment details…</div>
-  <button id="androidContinue">Continue to pay</button>
-  <div id="debug"></div>
+  <a id="androidContinue" href="#">Continue to pay</a>
   <h2 id="banksHeading">Pay with</h2>
   <div id="banks"></div>
 
@@ -37,35 +35,28 @@ const token = window.location.pathname.split("/").pop();
 // Android's real intent-resolution system regardless of default-browser
 // settings.
 //
-// Chrome also blocks *automatic* (non-user-initiated) navigation to
-// intent:// URLs as an anti-abuse measure — an unprompted redirect on page
-// load silently no-ops straight to the fallback instead of resolving to an
-// app. So this has to be a real tap: show a "Continue" button on Android
-// and fire the intent:// redirect from its click handler.
+// This must be a real <a href="intent://..."> the browser navigates
+// natively on click — a JS-computed location.href assignment (even from
+// inside a genuine click handler) doesn't reliably carry Chrome's
+// "trusted user activation" flag for intent:// navigation, so it can
+// silently no-op instead of resolving to an app.
 //
-// iOS ignores this entirely and just proceeds to load() below. The "nr"
-// (no-redirect) param guards against re-showing the button once we land
-// back here via the intent's fallback URL (e.g. user backed out of the
-// chooser).
+// iOS ignores this entirely and just proceeds to load() below. Android
+// also skips the bank-button list entirely — the whole point on Android
+// is the native chooser, not a picker page.
 const isAndroid = /Android/i.test(navigator.userAgent);
 const skipRedirect = new URLSearchParams(window.location.search).has("nr");
 
 if (isAndroid && !skipRedirect) {
   const continueBtn = document.getElementById("androidContinue");
-  const debugEl = document.getElementById("debug");
+  const fallback =
+    window.location.href + (window.location.search ? "&" : "?") + "nr=1";
+  const intentUrl =
+    `intent://${window.location.host}${window.location.pathname}` +
+    `#Intent;scheme=https;S.browser_fallback_url=${encodeURIComponent(fallback)};end`;
+  continueBtn.href = intentUrl;
   continueBtn.style.display = "block";
-  continueBtn.addEventListener("click", () => {
-    const fallback =
-      window.location.href + (window.location.search ? "&" : "?") + "nr=1";
-    const intentUrl =
-      `intent://${window.location.host}${window.location.pathname}` +
-      `#Intent;scheme=https;S.browser_fallback_url=${encodeURIComponent(fallback)};end`;
-    debugEl.textContent = "navigating to: " + intentUrl;
-    // Must run synchronously within the click handler — any delay (even a
-    // setTimeout) drops Chrome's "user activation" flag, and it silently
-    // no-ops the intent:// navigation instead of resolving it.
-    window.location.href = intentUrl;
-  });
+  document.getElementById("banksHeading").style.display = "none";
 }
 
 async function load() {
@@ -89,10 +80,13 @@ async function load() {
   `;
 
   if (payload.paid) {
+    document.getElementById("androidContinue").style.display = "none";
     document.getElementById("banksHeading").style.display = "none";
     document.getElementById("banks").innerHTML = `<p id="paid">This payment has already been completed.</p>`;
     return;
   }
+
+  if (isAndroid && !skipRedirect) return; // Android: the Continue link above is the whole UI.
 
   const banksEl = document.getElementById("banks");
   banks.forEach((bank) => {
