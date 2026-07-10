@@ -13,3 +13,8 @@ backend/node_modules/
 **/ios/Podfile.lock
 **/*.iml
 .claude/settings.local.json
+
+# Release signing (never commit real keys)
+*.jks
+*.keystore
+keystore.properties

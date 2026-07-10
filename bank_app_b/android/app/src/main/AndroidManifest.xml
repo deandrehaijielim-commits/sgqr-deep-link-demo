@@ -35,11 +35,13 @@
                 <data android:scheme="${urlScheme}" android:host="pay"/>
             </intent-filter>
 
-            <!-- Universal-link-style https intent-filter. Deliberately NOT using
-                 android:autoVerify="true" — all three bank flavors declare this
-                 same unverified filter for the same host, so Android always shows
-                 the app chooser instead of silently auto-opening a "default" app. -->
-            <intent-filter>
+            <!-- Verified Android App Link. autoVerify="true" makes Android check
+                 this app's real signing certificate against
+                 /.well-known/assetlinks.json on deepLinkHost at install time.
+                 All three bank apps verify successfully for the same host, so
+                 tapping the link goes straight to the native chooser — no
+                 browser tab, no manual "Continue" step. -->
+            <intent-filter android:autoVerify="true">
                 <action android:name="android.intent.action.VIEW"/>
                 <category android:name="android.intent.category.DEFAULT"/>
                 <category android:name="android.intent.category.BROWSABLE"/>
@@ -49,13 +51,12 @@
                     android:pathPrefix="/pay"/>
             </intent-filter>
 
-            <!-- Shared scheme all three bank apps register (unlike the
-                 https:// filter above, no browser can ever claim this).
-                 pay.html's Android intent:// redirect targets this instead of
-                 https, since Chrome refuses to navigate an intent:// link
-                 whose target could resolve back to a browser — it silently
-                 no-ops rather than showing the chooser, to avoid looping
-                 back into itself. -->
+            <!-- Fallback path only: if verification hasn't propagated yet (it
+                 can take a few minutes after install) or a user reaches the
+                 picker webpage some other way, its "Continue to pay" button
+                 targets this shared scheme instead of https — no browser can
+                 ever claim it, so Chrome can't refuse the handoff the way it
+                 does for an https-scheme intent:// link. -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW"/>
                 <category android:name="android.intent.category.DEFAULT"/>

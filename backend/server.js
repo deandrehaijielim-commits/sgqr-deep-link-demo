@@ -28,6 +28,46 @@ app.use((req, res, next) => {
 
 app.use(express.static(path.join(__dirname, "public")));
 
+// Android App Links verification. Android fetches this at install time and
+// checks it against each app's real signing certificate — express.static
+// ignores dotfiles/dot-directories by default, so this needs an explicit
+// route rather than just dropping the file under public/.well-known/.
+const ASSETLINKS = [
+  {
+    relation: ["delegate_permission/common.handle_all_urls"],
+    target: {
+      namespace: "android_app",
+      package_name: "com.sgqrdemo.bankaapp",
+      sha256_cert_fingerprints: [
+        "D7:87:13:E6:43:7B:0D:B4:D3:97:00:92:B2:07:CE:8D:58:0F:FA:B5:FF:B7:E3:1C:7C:56:30:A8:9D:04:A3:1E",
+      ],
+    },
+  },
+  {
+    relation: ["delegate_permission/common.handle_all_urls"],
+    target: {
+      namespace: "android_app",
+      package_name: "com.sgqrdemo.bankbapp",
+      sha256_cert_fingerprints: [
+        "D7:87:13:E6:43:7B:0D:B4:D3:97:00:92:B2:07:CE:8D:58:0F:FA:B5:FF:B7:E3:1C:7C:56:30:A8:9D:04:A3:1E",
+      ],
+    },
+  },
+  {
+    relation: ["delegate_permission/common.handle_all_urls"],
+    target: {
+      namespace: "android_app",
+      package_name: "com.sgqrdemo.bankcapp",
+      sha256_cert_fingerprints: [
+        "D7:87:13:E6:43:7B:0D:B4:D3:97:00:92:B2:07:CE:8D:58:0F:FA:B5:FF:B7:E3:1C:7C:56:30:A8:9D:04:A3:1E",
+      ],
+    },
+  },
+];
+app.get("/.well-known/assetlinks.json", (req, res) => {
+  res.json(ASSETLINKS);
+});
+
 app.get("/api/banks", (req, res) => {
   res.json(BANKS);
 });
@@ -77,9 +117,11 @@ app.get("/qr/:token", async (req, res) => {
   }
 });
 
-// This is the universal-link target encoded in the QR. Android apps register an
-// unverified intent-filter for this host so the OS always shows its app chooser;
-// iOS has no hosted apple-app-site-association, so it always lands here in Safari.
+// This is the link target encoded in the QR. Android apps declare a verified
+// App Link for this host (see /.well-known/assetlinks.json), so Android goes
+// straight to the native chooser without ever reaching this page in the
+// success case; iOS has no hosted apple-app-site-association, so it always
+// lands here in Safari.
 app.get("/pay/:token", (req, res) => {
   const payload = getPayload(req.params.token);
   if (!payload) return res.status(404).send("Payment not found or expired.");
