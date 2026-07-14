@@ -22,6 +22,7 @@ class _BankAppState extends State<BankApp> {
   final _appLinks = AppLinks();
   StreamSubscription<Uri>? _linkSub;
   Uri? _lastHandledUri;
+  DateTime? _lastHandledAt;
 
   @override
   void initState() {
@@ -50,8 +51,17 @@ class _BankAppState extends State<BankApp> {
   }
 
   void _handleUri(Uri uri) {
-    if (_lastHandledUri == uri) return;
+    final now = DateTime.now();
+    // Only dedupe if the *same* link arrives again within a couple seconds —
+    // that's the getInitialLink()/uriLinkStream double-emit on cold start,
+    // not a legitimate later re-tap of the same payment link (e.g. after the
+    // user cancelled and re-opened it), which must still go through.
+    final isDuplicate = _lastHandledUri == uri &&
+        _lastHandledAt != null &&
+        now.difference(_lastHandledAt!) < const Duration(seconds: 2);
+    if (isDuplicate) return;
     _lastHandledUri = uri;
+    _lastHandledAt = now;
     final token = _extractToken(uri);
     if (token == null) return;
     _navigatorKey.currentState?.push(
