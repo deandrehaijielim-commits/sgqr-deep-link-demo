@@ -68,6 +68,71 @@ if (isAndroid && !skipRedirect) {
   document.getElementById("banksHeading").style.display = "none";
 }
 
+let banksCache = null;
+let banksRendered = false;
+let pollTimer = null;
+
+function renderPayloadInfo(payload) {
+  document.getElementById("payload").innerHTML = `
+    <div class="merchant">Pay ${payload.merchant}</div>
+    <div class="amount">${payload.currency} ${Number(payload.amount).toFixed(2)}</div>
+    <div class="merchant">Ref: ${payload.reference}</div>
+  `;
+}
+
+function renderCompleted() {
+  document.getElementById("androidContinue").style.display = "none";
+  document.getElementById("banksHeading").style.display = "none";
+  document.getElementById("banks").innerHTML = `<p id="paid">This payment has already been completed.</p>`;
+  stopWatching();
+}
+
+function renderBankButtons() {
+  if (banksRendered || !banksCache) return;
+  banksRendered = true;
+  const banksEl = document.getElementById("banks");
+  banksCache.forEach((bank) => {
+    const btn = document.createElement("button");
+    btn.className = "bank-btn";
+    btn.style.background = bank.color;
+    btn.innerHTML = `<span class="dot"></span>${bank.name}`;
+    btn.addEventListener("click", () => openBank(bank));
+    banksEl.appendChild(btn);
+  });
+}
+
+// Re-fetches just the payload (cheap) so the page can flip itself over to
+// "completed" the moment some other tab/app approves it — covers the case
+// where this tab stays open in the background while the user approves in
+// the bank app, then comes back to it.
+async function checkStatus() {
+  const res = await fetch(`/api/payload/${token}`);
+  if (!res.ok) {
+    document.getElementById("payload").innerHTML = `<span id="error">Payment not found or expired.</span>`;
+    stopWatching();
+    return;
+  }
+  const payload = await res.json();
+  renderPayloadInfo(payload);
+  if (payload.paid) {
+    renderCompleted();
+    return;
+  }
+  if (!(isAndroid && !skipRedirect)) renderBankButtons();
+}
+
+function stopWatching() {
+  if (pollTimer) {
+    clearInterval(pollTimer);
+    pollTimer = null;
+  }
+  document.removeEventListener("visibilitychange", onVisibilityChange);
+}
+
+function onVisibilityChange() {
+  if (!document.hidden) checkStatus();
+}
+
 async function load() {
   const [payloadRes, banksRes] = await Promise.all([
     fetch(`/api/payload/${token}`),
@@ -80,32 +145,21 @@ async function load() {
   }
 
   const payload = await payloadRes.json();
-  const banks = await banksRes.json();
+  banksCache = await banksRes.json();
 
-  document.getElementById("payload").innerHTML = `
-    <div class="merchant">Pay ${payload.merchant}</div>
-    <div class="amount">${payload.currency} ${Number(payload.amount).toFixed(2)}</div>
-    <div class="merchant">Ref: ${payload.reference}</div>
-  `;
+  renderPayloadInfo(payload);
 
   if (payload.paid) {
-    document.getElementById("androidContinue").style.display = "none";
-    document.getElementById("banksHeading").style.display = "none";
-    document.getElementById("banks").innerHTML = `<p id="paid">This payment has already been completed.</p>`;
+    renderCompleted();
     return;
   }
 
-  if (isAndroid && !skipRedirect) return; // Android: the Continue link above is the whole UI.
+  if (!(isAndroid && !skipRedirect)) renderBankButtons();
 
-  const banksEl = document.getElementById("banks");
-  banks.forEach((bank) => {
-    const btn = document.createElement("button");
-    btn.className = "bank-btn";
-    btn.style.background = bank.color;
-    btn.innerHTML = `<span class="dot"></span>${bank.name}`;
-    btn.addEventListener("click", () => openBank(bank));
-    banksEl.appendChild(btn);
-  });
+  // Keep watching for completion: poll every 2s, and re-check immediately
+  // whenever the tab regains focus (e.g. returning from the bank app).
+  pollTimer = setInterval(checkStatus, 2000);
+  document.addEventListener("visibilitychange", onVisibilityChange);
 }
 
 function openBank(bank) {
