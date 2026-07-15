@@ -10,8 +10,13 @@
   .payload .amount { font-size: 2rem; font-weight: 700; }
   .payload .merchant { color: #555; }
   h2 { font-size: 1rem; color: #444; margin-bottom: 8px; }
-  .bank-btn { display: flex; align-items: center; width: 100%; padding: 14px 16px; margin-bottom: 12px; border: none; border-radius: 10px; color: white; font-size: 1rem; font-weight: 600; cursor: pointer; }
-  .bank-btn .dot { width: 12px; height: 12px; border-radius: 50%; background: rgba(255,255,255,0.6); margin-right: 12px; }
+  .bank-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+  .bank-tile { display: flex; flex-direction: column; align-items: center; gap: 6px; border: none; background: none; padding: 4px; cursor: pointer; font-family: inherit; }
+  .bank-tile .icon { width: 56px; height: 56px; border-radius: 16px; display: flex; align-items: center; justify-content: center; color: white; font-size: 1.3rem; font-weight: 700; }
+  .bank-tile .label { font-size: 0.78rem; color: #333; text-align: center; line-height: 1.2; }
+  .bank-tile.unavailable { cursor: default; }
+  .bank-tile.unavailable .icon { background: #d9d9d9 !important; color: #999; }
+  .bank-tile.unavailable .label { color: #999; }
   #error { color: #c0392b; }
   #paid { color: #2a9d8f; font-weight: 600; }
   #androidContinue { display: none; width: 100%; padding: 16px; margin-bottom: 24px; border: none; border-radius: 10px; background: #1a1a1a; color: white; font-size: 1.05rem; font-weight: 600; cursor: pointer; text-align: center; text-decoration: none; box-sizing: border-box; }
@@ -21,7 +26,7 @@
   <div class="payload" id="payload">Loading payment details…</div>
   <a id="androidContinue" href="#">Continue to pay</a>
   <h2 id="banksHeading">Pay with</h2>
-  <div id="banks"></div>
+  <div id="banks" class="bank-grid"></div>
 
 <script>
 const token = window.location.pathname.split("/").pop();
@@ -87,17 +92,26 @@ function renderCompleted() {
   stopWatching();
 }
 
+// iOS/Safari has no API to check "is this app installed" before the user
+// taps anything — Apple deliberately doesn't expose that to web pages (it'd
+// be a fingerprinting vector). So every bank starts visible; a tile only
+// gets marked unavailable *after* a tap that didn't actually open the app.
+const unavailable = new Set();
+
 function renderBankButtons() {
   if (banksRendered || !banksCache) return;
   banksRendered = true;
   const banksEl = document.getElementById("banks");
   banksCache.forEach((bank) => {
-    const btn = document.createElement("button");
-    btn.className = "bank-btn";
-    btn.style.background = bank.color;
-    btn.innerHTML = `<span class="dot"></span>${bank.name}`;
-    btn.addEventListener("click", () => openBank(bank));
-    banksEl.appendChild(btn);
+    const tile = document.createElement("button");
+    tile.className = "bank-tile";
+    tile.dataset.bankId = bank.id;
+    tile.innerHTML = `
+      <span class="icon" style="background:${bank.color}">${bank.name.trim().split(/\s+/).pop().charAt(0)}</span>
+      <span class="label">${bank.name}</span>
+    `;
+    tile.addEventListener("click", () => openBank(bank, tile));
+    banksEl.appendChild(tile);
   });
 }
 
@@ -162,8 +176,27 @@ async function load() {
   document.addEventListener("visibilitychange", onVisibilityChange);
 }
 
-function openBank(bank) {
+function openBank(bank, tile) {
+  if (unavailable.has(bank.id)) return;
+
+  // If the tap actually opens the app, this page gets backgrounded (the tab
+  // becomes hidden) well within the timeout below. If nothing happens —
+  // the app isn't installed — the page stays visible and we know to mark
+  // this tile unavailable for the rest of the session.
+  let wentHidden = false;
+  const onHide = () => { if (document.hidden) wentHidden = true; };
+  document.addEventListener("visibilitychange", onHide);
+
   window.location.href = `${bank.scheme}://pay?token=${encodeURIComponent(token)}`;
+
+  setTimeout(() => {
+    document.removeEventListener("visibilitychange", onHide);
+    if (!wentHidden && !document.hidden) {
+      unavailable.add(bank.id);
+      tile.classList.add("unavailable");
+      tile.querySelector(".label").textContent = `${bank.name} — not installed`;
+    }
+  }, 1500);
 }
 
 load();
