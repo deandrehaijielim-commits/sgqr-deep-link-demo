@@ -105,6 +105,53 @@ app.get("/methods/applinks/:token", (req, res) => {
   </body></html>`);
 });
 
+// Apple's equivalent of assetlinks.json for method_universallinks (Verified
+// iOS Universal Links). iOS fetches this once at install/update time over
+// HTTPS and, if the app's Team ID + bundle ID match, treats the app as sole
+// verified owner of /methods/universallinks/* — the link then opens the
+// app directly with no Safari, no prompt of any kind. Must be served with
+// no file extension and content-type application/json (no .json suffix,
+// unlike Android's assetlinks.json).
+app.get("/.well-known/apple-app-site-association", (req, res) => {
+  res.json({
+    applinks: {
+      details: [
+        {
+          appID: "HBT73QTC22.com.sgqrdemo.methodUniversallinks",
+          paths: ["/methods/universallinks/*"],
+        },
+      ],
+    },
+  });
+});
+
+// Reached only if verification failed or the app isn't installed — a
+// genuinely verified Universal Link never lets Safari see this at all.
+app.get("/methods/universallinks/:token", (req, res) => {
+  const payload = getPayload(req.params.token);
+  if (!payload) return res.status(404).send("Payment not found or expired.");
+  res.send(`<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Verified Universal Links demo</title></head>
+  <body style="font-family:-apple-system,Helvetica,Arial,sans-serif;max-width:420px;margin:40px auto;padding:0 16px;">
+  <h2>You're seeing this in Safari</h2>
+  <p>If the "UniversalLinks Demo" app were installed and its Universal Link verification succeeded, iOS would have opened it directly — this page would never have been reached.</p>
+  <p>Install the app, then tap this same link again to see the difference.</p>
+  <p style="color:#888;font-size:0.85rem">token: ${payload.token}</p>
+  </body></html>`);
+});
+
+app.get("/methods/universallinks/qr/:token", async (req, res) => {
+  const payload = getPayload(req.params.token);
+  if (!payload) return res.status(404).send("payload not found");
+  const url = `${BASE_URL}/methods/universallinks/${payload.token}`;
+  try {
+    const png = await QRCode.toBuffer(url, { width: 320, margin: 2 });
+    res.type("png").send(png);
+  } catch (err) {
+    res.status(500).send("failed to generate QR");
+  }
+});
+
 app.get("/methods/applinks/qr/:token", async (req, res) => {
   const payload = getPayload(req.params.token);
   if (!payload) return res.status(404).send("payload not found");
