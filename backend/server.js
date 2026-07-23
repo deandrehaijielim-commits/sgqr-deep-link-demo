@@ -65,6 +65,58 @@ app.post("/api/payload/:token/pay", (req, res) => {
   res.json(result.payload);
 });
 
+// ==================== METHOD DEMOS ====================
+// Separate, standalone apps illustrating other deep-linking mechanisms
+// besides this project's core unregistered-link approach. Each is a
+// deliberate contrast case — see SGQR_Complete_Project_Documentation.docx
+// for the full comparison.
+
+// Digital Asset Links file for method_applinks (Verified Android App Links).
+// Android checks this against the app's real signing certificate at install
+// time; if it matches, the app becomes the sole verified owner of
+// /methods/applinks/* and opens directly with no chooser.
+app.get("/.well-known/assetlinks.json", (req, res) => {
+  res.json([
+    {
+      relation: ["delegate_permission/common.handle_all_urls"],
+      target: {
+        namespace: "android_app",
+        package_name: "com.sgqrdemo.methodapplinks",
+        sha256_cert_fingerprints: [
+          "D7:87:13:E6:43:7B:0D:B4:D3:97:00:92:B2:07:CE:8D:58:0F:FA:B5:FF:B7:E3:1C:7C:56:30:A8:9D:04:A3:1E",
+        ],
+      },
+    },
+  ]);
+});
+
+// Reached only if verification failed or the app isn't installed — a
+// genuinely verified App Link never lets the browser see this at all.
+app.get("/methods/applinks/:token", (req, res) => {
+  const payload = getPayload(req.params.token);
+  if (!payload) return res.status(404).send("Payment not found or expired.");
+  res.send(`<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Verified App Links demo</title></head>
+  <body style="font-family:-apple-system,Helvetica,Arial,sans-serif;max-width:420px;margin:40px auto;padding:0 16px;">
+  <h2>You're seeing this in a browser</h2>
+  <p>If the "AppLinks Demo" app were installed and its App Link verification succeeded, Android would have opened it directly — this page would never have been reached.</p>
+  <p>Install the app, then tap this same link again to see the difference.</p>
+  <p style="color:#888;font-size:0.85rem">token: ${payload.token}</p>
+  </body></html>`);
+});
+
+app.get("/methods/applinks/qr/:token", async (req, res) => {
+  const payload = getPayload(req.params.token);
+  if (!payload) return res.status(404).send("payload not found");
+  const url = `${BASE_URL}/methods/applinks/${payload.token}`;
+  try {
+    const png = await QRCode.toBuffer(url, { width: 320, margin: 2 });
+    res.type("png").send(png);
+  } catch (err) {
+    res.status(500).send("failed to generate QR");
+  }
+});
+
 app.get("/qr/:token", async (req, res) => {
   const payload = getPayload(req.params.token);
   if (!payload) return res.status(404).send("payload not found");
