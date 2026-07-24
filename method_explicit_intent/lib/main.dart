@@ -91,7 +91,7 @@ class _MethodAppState extends State<MethodApp> {
               const Text(
                 'This app demonstrates the "I already know which app" case: '
                 'an intent:// link that names this app\'s package directly '
-                'via package=com.sgqrdemo.methodexplicitintent.',
+                'via package=com.sgqrdemo.method_explicit_intent.',
                 style: TextStyle(fontSize: 15, color: Colors.black54),
               ),
               const SizedBox(height: 8),
