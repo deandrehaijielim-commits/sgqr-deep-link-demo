@@ -99,7 +99,7 @@ app.get("/methods/applinks/:token", (req, res) => {
   <title>Verified App Links demo</title></head>
   <body style="font-family:-apple-system,Helvetica,Arial,sans-serif;max-width:420px;margin:40px auto;padding:0 16px;">
   <h2>You're seeing this in a browser</h2>
-  <p>If the "AppLinks Demo" app were installed and its App Link verification succeeded, Android would have opened it directly — this page would never have been reached.</p>
+  <p>If the "Bank 1" app were installed and its App Link verification succeeded, Android would have opened it directly — this page would never have been reached.</p>
   <p>Install the app, then tap this same link again to see the difference.</p>
   <p style="color:#888;font-size:0.85rem">token: ${payload.token}</p>
   </body></html>`);
@@ -134,7 +134,7 @@ app.get("/methods/universallinks/:token", (req, res) => {
   <title>Verified Universal Links demo</title></head>
   <body style="font-family:-apple-system,Helvetica,Arial,sans-serif;max-width:420px;margin:40px auto;padding:0 16px;">
   <h2>You're seeing this in Safari</h2>
-  <p>If the "UniversalLinks Demo" app were installed and its Universal Link verification succeeded, iOS would have opened it directly — this page would never have been reached.</p>
+  <p>If the "Bank 2" app were installed and its Universal Link verification succeeded, iOS would have opened it directly — this page would never have been reached.</p>
   <p>Install the app, then tap this same link again to see the difference.</p>
   <p style="color:#888;font-size:0.85rem">token: ${payload.token}</p>
   </body></html>`);
@@ -158,7 +158,7 @@ app.get("/methods/smartbanner/:token", (req, res) => {
   <h2>Smart App Banner demo page</h2>
   <p>This page carries a real &lt;meta name="apple-itunes-app"&gt; tag. On a genuinely published app, Safari would show a banner up top offering to open (or install) it.</p>
   <p>Because this demo app isn't on the App Store, Safari has nothing to validate the app-id against, so no banner appears here — that's expected, not a bug.</p>
-  <p>If you have the app installed, you can still open it directly to see how it reads the same app-argument value a real banner tap would deliver:</p>
+  <p>If you have "Bank 3" installed, you can still open it directly to see how it reads the same app-argument value a real banner tap would deliver:</p>
   <p><a href="${appArgument}">${appArgument}</a></p>
   <p style="color:#888;font-size:0.85rem">token: ${payload.token}</p>
   </body></html>`);
@@ -197,7 +197,7 @@ app.get("/methods/explicitintent/:token", (req, res) => {
   <body style="font-family:-apple-system,Helvetica,Arial,sans-serif;max-width:420px;margin:40px auto;padding:0 16px;">
   <h2>Explicit package intent demo</h2>
   <p>This link names <code>com.sgqrdemo.method_explicit_intent</code> directly — Android has nothing to disambiguate, so tapping below skips any chooser, even with other bank apps installed.</p>
-  <p><a href="${intentUrl}" style="display:inline-block;padding:14px 20px;background:#E07A5F;color:white;border-radius:10px;text-decoration:none;font-weight:600;">Open ExplicitIntent Demo</a></p>
+  <p><a href="${intentUrl}" style="display:inline-block;padding:14px 20px;background:#E07A5F;color:white;border-radius:10px;text-decoration:none;font-weight:600;">Open Bank 4</a></p>
   <p style="color:#888;font-size:0.85rem">token: ${payload.token}</p>
   </body></html>`);
 });
@@ -230,14 +230,14 @@ app.get("/methods/deferred/:token", (req, res) => {
   <title>Deferred deep linking demo</title></head>
   <body style="font-family:-apple-system,Helvetica,Arial,sans-serif;max-width:420px;margin:40px auto;padding:0 16px;">
   <h2>Deferred deep linking demo</h2>
-  <p>On a real store-installed app, tapping "Install" here would carry this payment through the install itself. This demo instead copies the link to your clipboard — install (or open, if already installed) the "Deferred Demo" app, and it checks the clipboard automatically on first launch.</p>
+  <p>On a real store-installed app, tapping "Install" here would carry this payment through the install itself. This demo instead copies the link to your clipboard — install (or open, if already installed) the "Bank 5" app, and it checks the clipboard automatically on first launch.</p>
   <button id="copyBtn" style="display:block;width:100%;padding:14px 20px;background:#9B5DE5;color:white;border:none;border-radius:10px;font-size:1rem;font-weight:600;">Copy link & continue</button>
   <p id="status" style="color:#888;font-size:0.85rem"></p>
   <script>
     document.getElementById('copyBtn').addEventListener('click', async () => {
       try {
         await navigator.clipboard.writeText(${JSON.stringify(deferredUrl)});
-        document.getElementById('status').textContent = 'Copied — now open the Deferred Demo app.';
+        document.getElementById('status').textContent = 'Copied — now open the Bank 5 app.';
       } catch (e) {
         document.getElementById('status').textContent = 'Could not copy automatically — copy this page\\'s URL manually instead.';
       }
