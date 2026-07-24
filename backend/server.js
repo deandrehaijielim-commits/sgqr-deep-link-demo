@@ -140,6 +140,42 @@ app.get("/methods/universallinks/:token", (req, res) => {
   </body></html>`);
 });
 
+// iOS Smart App Banner demo (method_smartbanner). The <meta name="apple-itunes-app">
+// tag is what triggers Safari's banner — no entitlement, no hosted
+// verification file, nothing server-side to prove ownership. Apple instead
+// validates the app-id against a REAL App Store listing before ever
+// rendering the banner. Since this demo app is sideloaded and unpublished,
+// the banner cannot actually appear no matter how correct this tag is —
+// documented here and in the app itself.
+app.get("/methods/smartbanner/:token", (req, res) => {
+  const payload = getPayload(req.params.token);
+  if (!payload) return res.status(404).send("Payment not found or expired.");
+  const appArgument = `smartbannerdemo://pay?token=${payload.token}`;
+  res.send(`<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="apple-itunes-app" content="app-id=0000000000, app-argument=${appArgument}">
+  <title>Smart App Banner demo</title></head>
+  <body style="font-family:-apple-system,Helvetica,Arial,sans-serif;max-width:420px;margin:40px auto;padding:0 16px;">
+  <h2>Smart App Banner demo page</h2>
+  <p>This page carries a real &lt;meta name="apple-itunes-app"&gt; tag. On a genuinely published app, Safari would show a banner up top offering to open (or install) it.</p>
+  <p>Because this demo app isn't on the App Store, Safari has nothing to validate the app-id against, so no banner appears here — that's expected, not a bug.</p>
+  <p>If you have the app installed, you can still open it directly to see how it reads the same app-argument value a real banner tap would deliver:</p>
+  <p><a href="${appArgument}">${appArgument}</a></p>
+  <p style="color:#888;font-size:0.85rem">token: ${payload.token}</p>
+  </body></html>`);
+});
+
+app.get("/methods/smartbanner/qr/:token", async (req, res) => {
+  const payload = getPayload(req.params.token);
+  if (!payload) return res.status(404).send("payload not found");
+  const url = `${BASE_URL}/methods/smartbanner/${payload.token}`;
+  try {
+    const png = await QRCode.toBuffer(url, { width: 320, margin: 2 });
+    res.type("png").send(png);
+  } catch (err) {
+    res.status(500).send("failed to generate QR");
+  }
+});
+
 app.get("/methods/universallinks/qr/:token", async (req, res) => {
   const payload = getPayload(req.params.token);
   if (!payload) return res.status(404).send("payload not found");
