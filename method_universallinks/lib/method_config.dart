@@ -26,7 +26,7 @@ class MethodConfig {
 const MethodConfig currentMethod = MethodConfig(
   id: 'methodUniversallinks',
   name: 'Bank 2',
-  color: Color(0xFF0A7EA4),
+  color: Color(0xFF118AB2),
   methodLabel: 'Verified iOS Universal Links',
   platformBadge: 'iOS only',
   platformBadgeBg: Color(0xFFE3F2FD),

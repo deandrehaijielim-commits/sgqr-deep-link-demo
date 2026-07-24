@@ -26,7 +26,7 @@ class MethodConfig {
 const MethodConfig currentMethod = MethodConfig(
   id: 'methodSmartbanner',
   name: 'Bank 3',
-  color: Color(0xFF2A9D8F),
+  color: Color(0xFFB5651D),
   methodLabel: 'iOS Smart App Banner',
   platformBadge: 'iOS only',
   platformBadgeBg: Color(0xFFE3F2FD),

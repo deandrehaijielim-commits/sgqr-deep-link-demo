@@ -26,7 +26,7 @@ class MethodConfig {
 const MethodConfig currentMethod = MethodConfig(
   id: 'methodDeferred',
   name: 'Bank 5',
-  color: Color(0xFF9B5DE5),
+  color: Color(0xFFD81E5B),
   methodLabel: 'Deferred Deep Linking (clipboard simulation)',
   platformBadge: 'Android + iOS',
   platformBadgeBg: Color(0xFFF3E5F5),
