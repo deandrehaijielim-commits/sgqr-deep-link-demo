@@ -214,6 +214,51 @@ app.get("/methods/explicitintent/qr/:token", async (req, res) => {
   }
 });
 
+// Deferred deep linking demo (method_deferred). Real deferred linking (as
+// used by referral/marketing SDKs) works because the App/Play Store carries
+// a click identifier through the install itself — only possible for a
+// genuinely published, store-installed app. This is a sideloaded demo, so
+// it can't do that; instead this page copies the destination to the
+// clipboard right before the (simulated) "go install" step, and the app
+// checks the clipboard once on its first launch — a real technique some
+// early SDKs actually used before official deferred-linking APIs existed.
+app.get("/methods/deferred/:token", (req, res) => {
+  const payload = getPayload(req.params.token);
+  if (!payload) return res.status(404).send("Payment not found or expired.");
+  const deferredUrl = `${BASE_URL}/methods/deferred/${payload.token}`;
+  res.send(`<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Deferred deep linking demo</title></head>
+  <body style="font-family:-apple-system,Helvetica,Arial,sans-serif;max-width:420px;margin:40px auto;padding:0 16px;">
+  <h2>Deferred deep linking demo</h2>
+  <p>On a real store-installed app, tapping "Install" here would carry this payment through the install itself. This demo instead copies the link to your clipboard — install (or open, if already installed) the "Deferred Demo" app, and it checks the clipboard automatically on first launch.</p>
+  <button id="copyBtn" style="display:block;width:100%;padding:14px 20px;background:#9B5DE5;color:white;border:none;border-radius:10px;font-size:1rem;font-weight:600;">Copy link & continue</button>
+  <p id="status" style="color:#888;font-size:0.85rem"></p>
+  <script>
+    document.getElementById('copyBtn').addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(${JSON.stringify(deferredUrl)});
+        document.getElementById('status').textContent = 'Copied — now open the Deferred Demo app.';
+      } catch (e) {
+        document.getElementById('status').textContent = 'Could not copy automatically — copy this page\\'s URL manually instead.';
+      }
+    });
+  </script>
+  <p style="color:#888;font-size:0.85rem">token: ${payload.token}</p>
+  </body></html>`);
+});
+
+app.get("/methods/deferred/qr/:token", async (req, res) => {
+  const payload = getPayload(req.params.token);
+  if (!payload) return res.status(404).send("payload not found");
+  const url = `${BASE_URL}/methods/deferred/${payload.token}`;
+  try {
+    const png = await QRCode.toBuffer(url, { width: 320, margin: 2 });
+    res.type("png").send(png);
+  } catch (err) {
+    res.status(500).send("failed to generate QR");
+  }
+});
+
 app.get("/methods/universallinks/qr/:token", async (req, res) => {
   const payload = getPayload(req.params.token);
   if (!payload) return res.status(404).send("payload not found");
