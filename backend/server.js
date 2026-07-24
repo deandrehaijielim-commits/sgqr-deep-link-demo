@@ -176,6 +176,44 @@ app.get("/methods/smartbanner/qr/:token", async (req, res) => {
   }
 });
 
+// Android explicit-package intent demo (method_explicit_intent). No
+// autoVerify, no assetlinks.json, no domain proof at all — this page's
+// "Open" link is an intent:// URI that names the target package directly
+// (package=com.sgqrdemo.method_explicit_intent). Android has nothing left
+// to disambiguate when exactly one package is named, so it skips the
+// chooser unconditionally, the same no-chooser outcome as method_applinks
+// but reached by a completely different mechanism: the sender states the
+// answer instead of the OS verifying it. This only makes sense when
+// whoever generates the link already knows which app should open it —
+// the opposite of this project's core "any of 3 banks" scenario.
+app.get("/methods/explicitintent/:token", (req, res) => {
+  const payload = getPayload(req.params.token);
+  if (!payload) return res.status(404).send("Payment not found or expired.");
+  const intentUrl =
+    `intent://pay?token=${encodeURIComponent(payload.token)}` +
+    `#Intent;scheme=explicitintentdemo;package=com.sgqrdemo.method_explicit_intent;end`;
+  res.send(`<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Explicit Package Intent demo</title></head>
+  <body style="font-family:-apple-system,Helvetica,Arial,sans-serif;max-width:420px;margin:40px auto;padding:0 16px;">
+  <h2>Explicit package intent demo</h2>
+  <p>This link names <code>com.sgqrdemo.method_explicit_intent</code> directly — Android has nothing to disambiguate, so tapping below skips any chooser, even with other bank apps installed.</p>
+  <p><a href="${intentUrl}" style="display:inline-block;padding:14px 20px;background:#E07A5F;color:white;border-radius:10px;text-decoration:none;font-weight:600;">Open ExplicitIntent Demo</a></p>
+  <p style="color:#888;font-size:0.85rem">token: ${payload.token}</p>
+  </body></html>`);
+});
+
+app.get("/methods/explicitintent/qr/:token", async (req, res) => {
+  const payload = getPayload(req.params.token);
+  if (!payload) return res.status(404).send("payload not found");
+  const url = `${BASE_URL}/methods/explicitintent/${payload.token}`;
+  try {
+    const png = await QRCode.toBuffer(url, { width: 320, margin: 2 });
+    res.type("png").send(png);
+  } catch (err) {
+    res.status(500).send("failed to generate QR");
+  }
+});
+
 app.get("/methods/universallinks/qr/:token", async (req, res) => {
   const payload = getPayload(req.params.token);
   if (!payload) return res.status(404).send("payload not found");
